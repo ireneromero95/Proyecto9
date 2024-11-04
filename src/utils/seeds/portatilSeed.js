@@ -5,19 +5,22 @@ const puppeteer = require('puppeteer');
 const fs = require('fs');
 
 const PORTATILES = [];
+let pageNumber = 1;
 
-const scraper = async () => {
+let urlbase = 'https://www.pccomponentes.com/portatiles';
+
+const scraper = async (url) => {
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
-  await page.goto('https://www.pccomponentes.com/portatiles');
+  await page.goto(url);
   //Se crea el elemento, se espera para elegir por id y luego se evalua y se clicka
   const buttonCookies = await page.waitForSelector('#cookiesrejectAll');
-  await buttonCookies.evaluate((e) => e.click());
+  await buttonCookies?.evaluate((e) => e.click());
   //Seleccionamos el elemento, también se puede evaluar al mismo tiempo
-  repeat(page, browser);
+  repeat(page, browser, url);
 };
 
-const repeat = async (page, browser) => {
+const repeat = async (page, browser, url) => {
   const products = await page.$$('.product-card');
 
   for (const product of products) {
@@ -45,21 +48,28 @@ const repeat = async (page, browser) => {
     PORTATILES.push(portatil);
   }
 
-  try {
+  if (pageNumber < 65) {
+    pageNumber++;
+    urlNavegar = urlbase + `?page=${pageNumber}`;
+    console.log(urlNavegar);
+    scraper(urlNavegar);
+
+    /*Opción click al siguiente, no conseguía avanzar de la página 2
+
     await page.$eval("[aria-label='Página siguiente']", (e) => e.click());
     //console.log('Pasamos a siguiente página');
-    await page.waitForNavigation();
+    await page.waitForNavigation(); 
 
     console.log(page.$("[aria-label='Página siguiente']"));
-    //console.log(`llevamos${PORTATILES.length} recolectados`);
-    repeat(page);
-  } catch (error) {
-    //console.log(`llevamos${PORTATILES.length} recolectados`);
+    //console.log(`llevamos${PORTATILES.length} recolectados`);*/
+    //repeat(page);
+    await browser.close();
+  } else {
+    console.log(`llevamos${PORTATILES.length} recolectados`);
+    write(PORTATILES);
     await browser.close();
   }
 };
-
-// write(PORTATILES);
 
 //
 
@@ -69,4 +79,4 @@ const write = (PORTATILES) => {
   });
 };
 
-scraper();
+scraper(urlbase);
