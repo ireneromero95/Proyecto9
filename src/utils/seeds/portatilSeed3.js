@@ -26,15 +26,31 @@ const scraper = async () => {
   const buttonCookies = await page.$('#cookiesrejectAll');
   if (buttonCookies) await buttonCookies.click();
 
-  await repeat(page);
+  //Intento lo de total de pagiunas
+  const totalPages = await page.evaluate(() => {
+    const paginator = document.querySelector('#category-list-paginator');
+    if (!paginator) return 1;
+
+    const spanPaginacion = paginator.querySelector('span');
+    if (!spanPaginacion) return 1;
+
+    const match = spanPaginacion.textContent.match(/de (\d+)/);
+    return match ? parseInt(match[1]) : 1;
+  });
+
+  console.log(`Total de páginas detectadas: ${totalPages}`);
+
+  console.log(`Se han detectado ${totalPages} páginas`);
+
+  await repeat(page, totalPages);
 
   console.log(`Recolección completada: ${PORTATILES.length} productos.`);
   write(PORTATILES);
   await browser.close();
 };
 
-const repeat = async (page) => {
-  while (pageNumber <= 65) {
+const repeat = async (page, totalPages) => {
+  while (pageNumber <= totalPages) {
     // Bucle hasta la última página
     console.log(`Scrapeando página ${pageNumber}...`);
 
